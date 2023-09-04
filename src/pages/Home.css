@@ -1,0 +1,51 @@
+.image-container {
+    position: relative;
+    width: 100%;
+    display:inline-block;
+
+  }
+
+.image-container img{
+    width: 112%;
+    float: bottom;
+}
+  
+.image-text {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+.image-text h1 {
+    font-size: 45px;
+    font-family: 'Barlow', sans-serif;
+    color:aliceblue;
+  }
+  
+.image-text p {
+    font-size: 25px;
+    font-family: 'Barlow', sans-serif;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color:aliceblue;
+  }
+  
+.image-text button {
+    display: inline-block;
+    font-family: 'Roboto Mono', monospace;
+    padding: 10px 20px;
+    background-color: gold;
+    color:black;
+    text-decoration: none;
+    border-radius: 50px; 
+    font-size: 18px;
+    border: none; 
+  }
+
+oval-button:hover {
+    background-color: #0056b3; 
+  }

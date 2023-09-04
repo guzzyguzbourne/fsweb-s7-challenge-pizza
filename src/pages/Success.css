@@ -1,0 +1,13 @@
+body {
+    background-color: red; 
+  }
+
+.siparis-success{
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+}
