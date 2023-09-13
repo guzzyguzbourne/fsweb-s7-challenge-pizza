@@ -1,9 +1,9 @@
 import React, { useState, useEffect} from 'react';
 import { useHistory } from "react-router-dom";
-import { Link } from "react-router-dom";
+//import { Link } from "react-router-dom";
 import styled from 'styled-components';
 //import axios from 'axios';
-//import * as Yup from 'yup';
+import * as Yup from 'yup';
 import './OrderPizza.css';
 
 
@@ -22,11 +22,11 @@ const malzemeler = [
 {name: "Biber", price: 5}];
 
 const Button = styled.button`
-  color:  #FDC913;
   font-size: 1em;
   margin: 0;
   padding: 0;
   display: block;
+  color: black;
   background-color: #FDC913;
   border-radius: 3px;
   text-align: center;
@@ -79,6 +79,9 @@ function OrderPizza() {
   const [ekMalzemeFiyati, setEkMalzemeFiyati] = useState(0);
   const [orderSayisi, setOrderSayisi] = useState(1);
 
+  const [isValid, setIsValid] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
+
   useEffect(() => {
     // Seçilen ek malzemelere göre fiyatı hesapla
     let malzemeFiyat = 0;
@@ -89,34 +92,67 @@ function OrderPizza() {
         malzemeFiyat += malzeme.price;
       }
     });
-    setEkMalzemeFiyati(malzemeFiyat)
-    if((orderSayisi!==1) && (malzemeFiyat=== 0)){
-      setPizzaFiyati(pizzaBazFiyat* orderSayisi);
-    }if((orderSayisi===1) && (malzemeFiyat === 0)){
-      setPizzaFiyati(pizzaBazFiyat);
-    }else{
-      setPizzaFiyati(((pizzaBazFiyat + malzemeFiyat)*orderSayisi));
-    }
-    
+    setEkMalzemeFiyati(malzemeFiyat);
+    setPizzaFiyati(pizzaBazFiyat + malzemeFiyat);  
   }, [ekMalzemeSec, pizzaFiyati]);
 
-/*
+
   const formSchema = Yup.object().shape({
     pizzaBoyutu: Yup.string()
       .oneOf(['small', 'orta', 'buyuk'], 'Geçerli bir pizza boyutu seçin')
       .required('Pizza boyutu gerekli'),
     hamurTipi: Yup.string()
       .oneOf(['ince', 'kalın'], 'Geçerli bir hamur tipi seçin')
-      .required('Hamur tipi gerekli')
-  });*/
+      .required('Hamur tipi gerekli'),
+    ekMalzemeSec: Yup.array().min(1, "En az bir ek malzeme seçmelisiniz.")
+  });
   
+  const validateForm = async () => {
+    try {
+      await formSchema.validate({
+        pizzaBoyutu,
+        hamurTipi,
+        ekMalzemeSec,
+      });
+    setIsValid(true);
+    setValidationErrors([]);
+    }catch (error) {
+      setIsValid(false); // validasyon başarısız ise butonu pasif yap
+      setValidationErrors(error.inner.reduce((acc, currentError) => {
+        return {...acc, [currentError.path]: currentError.message};
+      }, {}));
+      alert(error.message);
+      }
+  };
+
+  useEffect(() => {
+    validateForm();
+  }, [pizzaBoyutu, hamurTipi, ekMalzemeSec]); // bu değerlerde bir değişiklik olduğunda validasyonu tekrar çalıştır
 
   const handleEkMalzeme = (malzeme) => {
+    /*
     if (ekMalzemeSec.includes(malzeme)) {
       setEkMalzemeSec(ekMalzemeSec.filter(item => item !== malzeme));
     } else {
       setEkMalzemeSec([...ekMalzemeSec, malzeme]);
+    }*/
+    let newEkMalzemeList = [];
+  
+    if (ekMalzemeSec.includes(malzeme)) {
+      newEkMalzemeList = ekMalzemeSec.filter(item => item !== malzeme);
+    } else {
+      newEkMalzemeList = [...ekMalzemeSec, malzeme];
     }
+  
+    // reach ile ekMalzemeSec için validasyon yapılıyor
+    Yup.reach(formSchema, 'ekMalzemeSec').validate(newEkMalzemeList)
+      .then(() => {
+        setEkMalzemeSec(newEkMalzemeList);
+      })
+      .catch(error => {
+        console.error("Validasyon hatası:", error.message);
+        alert(error.message);
+      });
   };
 /*
   const handleChange = event => {
@@ -136,33 +172,76 @@ function OrderPizza() {
             setErrors({...errors, [name]: err.errors[0]})
         })
   }*/
-
+  /*
   const handleSubmit = (event) => {
-    const orderDetails = {
-      pizzaBoyutu: pizzaBoyutu,
-      hamurTipi: hamurTipi,
-      ekMalzemeSec: ekMalzemeSec,
-      notes: notes,
-      pizzaFiyati: pizzaFiyati,
-      ekMalzemeFiyati: ekMalzemeFiyati
-    };
-    history.push("/success");
-    console.log("Sipariş Detayları:", orderDetails);
-};
+    event.preventDefault();
+
+    // Form validation
+
+    formSchema.isValid({
+      pizzaBoyutu,
+      hamurTipi,
+      ekMalzemeSec,
+    })
+    .then(valid => {
+      if(valid){
+        const orderDetails = {
+            pizzaBoyutu: pizzaBoyutu,
+            hamurTipi: hamurTipi,
+            ekMalzemeSec: ekMalzemeSec,
+            notes: notes,
+            pizzaFiyati: pizzaFiyati,
+            ekMalzemeFiyati: ekMalzemeFiyati
+        }; 
+        history.push("/siparisver");
+        console.log("Sipariş Detayları:", orderDetails);
+      } else {
+        alert("Lütfen tümm seçimlerinizi tamamlayınız.");
+      }
+    });
+  };
+*/
+  const handlerSubmit = (event) =>{
+    event.preventDefault();
+    if(isValid){
+      const orderDetails = {
+        pizzaBoyutu: pizzaBoyutu,
+        hamurTipi: hamurTipi,
+        ekMalzemeSec: ekMalzemeSec,
+        notes: notes,
+        pizzaFiyati: pizzaFiyati,
+        ekMalzemeFiyati: ekMalzemeFiyati
+       }; 
+      history.push("/siparisver");
+      console.log("Sipariş Detayları:", orderDetails);
+    }else {
+        alert("Lütfen tümm seçimlerinizi tamamlayınız.")
+    }   
+  };
+
+  useEffect(()=>{
+    formSchema.isValid({
+      pizzaBoyutu,
+      hamurTipi,
+      ekMalzemeSec,
+    })
+    .then((valid)=>{
+      setIsValid(valid)}
+      )   
+    }, []);
 
   return (
     <div className="order-page">
       <header className="baslik">
-          <h1>Teknolojik Yemekler</h1>
-              <nav>
-                <a href="# ">Ana Sayfa - </a>
-                <a href="# ">Seçenekler - </a>
-                <a href="# ">Sipariş Oluştur</a>
-
-              </nav>
+        <h1>Teknolojik Yemekler</h1>
+          <nav>
+            <a href="# ">Ana Sayfa - </a>
+            <a href="# ">Seçenekler - </a>
+            <a href="# ">Sipariş Oluştur</a>
+          </nav>
       </header>
       <section id="bolumler" >
-      <h2>Position Absolute Acı Pizza</h2>
+        <h2>Position Absolute Acı Pizza</h2>
         <div className="pizza-info">
           <p> {pizzaBazFiyat}₺</p>
           <p> {pizzaRating}</p>
@@ -171,7 +250,7 @@ function OrderPizza() {
         <Description className="aciklama">
           <p> {Aciklama}</p>
         </Description>
-      <form onSubmit={handleSubmit}>
+        <form onSubmit={handlerSubmit}>
         <div className="pizzaSecim">
           <div className="pizza-boyutu">
           <h3>Pizza Boyutu:</h3>
@@ -213,7 +292,7 @@ function OrderPizza() {
           <h3>Hamur Seç</h3>
           <label> 
             <select
-              id="hamurTipi"
+              name="hamurTipi"
               value={hamurTipi}
               onChange={(e) => setHamurTipi(e.target.value)}
             >
@@ -223,9 +302,9 @@ function OrderPizza() {
             </select>
           </label>
         </div>
-      </div>
+        </div>
 
-      <div className="ekMalzeme">
+        <div className="ekMalzeme">
         <h3>Ek Malzemeler: </h3>
         <br />
         {malzemeler.map((malzeme, index) => (
@@ -239,34 +318,41 @@ function OrderPizza() {
           {malzeme.name}
           </label>
         ))}
-      </div>
+        </div>
 
-      <div className="siparis-notu">
-      <label>
-        <h3>Sipariş Notu: </h3>
-        <textarea
-          id="notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
+        <div className="siparis-notu">
+        <label>
+          <h3>Sipariş Notu: </h3>
+          <textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </label>
-      </div> 
-      </form>
-      <div className="alt-container">
-      <div className="order-quantity">
+        </div> 
+      
+        <div className="alt-container">
+          <div className="order-quantity">
             <ButtonQuantity onClick={() => setOrderSayisi(orderSayisi - 1)} disabled={orderSayisi === 1}>-</ButtonQuantity>
             <p>{orderSayisi}</p>
             <ButtonQuantity onClick={() => setOrderSayisi(orderSayisi + 1)}>+ </ButtonQuantity>
+          </div>
+          <div className="order-summary">
+            <h3>Sipariş Toplamı</h3>
+            <br />
+            <p>Ek Malzemeler: {ekMalzemeFiyati.toFixed(2) * orderSayisi}₺</p>
+            <p>Toplam Fiyat: {pizzaFiyati.toFixed(2) * orderSayisi}₺</p>
+            <div className="order-summary-button">
+              <div className="valid-error">
+                {Object.values(validationErrors).map((error, index) => (
+                <p key={index} style={{color: "red"}}>{error}</p>
+                ))}
+              </div>
+              <Button id = "order-button" type="submit" onClick={handlerSubmit} disabled={!isValid}> Siparişi Ver!</Button>
+            </div>
+          </div>
         </div>
-        <div className="order-summary">
-          <h3>Sipariş Toplamı</h3>
-          <br />
-          <p>Ek Malzemeler: {ekMalzemeFiyati.toFixed(2)}₺</p>
-          <p>Toplam Fiyat: {pizzaFiyati.toFixed(2)* orderSayisi}₺</p>
-          <div className="order-summary-button">
-          <Button id = "order-button" type="submit"><Link to="/siparisver">Siparişi Ver</Link></Button></div>
-        </div>
-      </div>
+        </form>
       </section>
     </div>
   );
